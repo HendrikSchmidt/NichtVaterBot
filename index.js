@@ -33,7 +33,7 @@ app.post('/new-message', function(req, res) {
 });
 
 app.listen(process.env.PORT || 3000, function() {
-    console.log('Telegram app listening on port 3000!');
+    console.log(`Telegram app listening on port ${process.env.PORT || 3000}!`);
 });
 
 new cronJob("00 05 13 * * *", function() {
