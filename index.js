@@ -3,6 +3,9 @@ let app = express();
 let bodyParser = require('body-parser');
 let cronJob = require("cron").CronJob;
 const axios = require('axios');
+const PORT = process.env.PORT || 3000
+
+const path = require('path')
 
 app.use(bodyParser.json()); // for parsing application/json
 app.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
@@ -32,9 +35,13 @@ app.post('/new-message', function(req, res) {
     });
 });
 
-app.listen(process.env.PORT || 3000, function() {
-    console.log(`Telegram app listening on port ${process.env.PORT || 3000}!`);
-});
+app
+    .set('views', path.join(__dirname, 'views'))
+    .set('view engine', 'ejs')
+    .get('/', (req, res) => res.render('index'))
+    .listen(PORT, function() {
+        console.log(`Telegram app listening on port ${PORT}!`);
+    });
 
 new cronJob("00 05 13 * * *", function() {
 
