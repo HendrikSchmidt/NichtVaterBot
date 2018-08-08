@@ -49,15 +49,19 @@ new cronJob("00 05 13 * * *", function() {
     }).catch(err => {
         console.log('Error :', err);
     });
-    // axios.post(
-    //     'https://api.telegram.org/bot612610633:AAFVU-joVBwknVNMlxoflcCl_UDAei_YLWM/sendMessage',
-    //     {
-    //         chat_id: 294184696,
-    //         text: 'Zeit die Pille zu nehmen :)'
-    //     }
-    // ).then(response => {
-    //     console.log('Message posted');
-    // }).catch(err => {
-    //     console.log('Error :', err);
-    // });
+    axios.post(
+        'https://api.telegram.org/bot612610633:AAFVU-joVBwknVNMlxoflcCl_UDAei_YLWM/sendMessage',
+        {
+            chat_id: 294184696,
+            text: 'Zeit die Pille zu nehmen :)'
+        }
+    ).then(response => {
+        console.log('Message posted');
+    }).catch(err => {
+        console.log('Error :', err);
+    });
+}, null, true, 'Europe/Berlin');
+
+new cronJob("00 */10 * * * *", function() {
+    console.log('Running'); 
 }, null, true, 'Europe/Berlin');
