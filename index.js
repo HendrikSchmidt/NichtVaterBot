@@ -31,13 +31,13 @@ app.post('/new-message', function(req, res) {
     });
 });
 
-app.listen(3000, function() {
+app.listen(process.env.PORT || 3000, function() {
     console.log('Telegram app listening on port 3000!');
 });
 
 let cronJob = require("cron").CronJob;
 
-new cronJob("0 11 21 * * *", function() {
+new cronJob("* 13 21 * * *", function() {
 
     axios.post(
         'https://api.telegram.org/bot612610633:AAFVU-joVBwknVNMlxoflcCl_UDAei_YLWM/sendMessage',
