@@ -37,7 +37,7 @@ app.listen(3000, function() {
 
 let cronJob = require("cron").CronJob;
 
-new cronJob("* 09 21 * * *", function() {
+new cronJob("0 11 21 * * *", function() {
 
     axios.post(
         'https://api.telegram.org/bot612610633:AAFVU-joVBwknVNMlxoflcCl_UDAei_YLWM/sendMessage',
