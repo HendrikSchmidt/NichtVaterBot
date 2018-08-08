@@ -62,6 +62,6 @@ new cronJob("00 05 13 * * *", function() {
     });
 }, null, true, 'Europe/Berlin');
 
-new cronJob("00 */10 * * * *", function() {
+new cronJob("00 * * * * *", function() {
     console.log('Running'); 
 }, null, true, 'Europe/Berlin');
