@@ -36,7 +36,7 @@ app.listen(process.env.PORT || 3000, function() {
     console.log('Telegram app listening on port 3000!');
 });
 
-new cronJob("00 17 21 * * *", function() {
+new cronJob("00 05 13 * * *", function() {
 
     axios.post(
         'https://api.telegram.org/bot612610633:AAFVU-joVBwknVNMlxoflcCl_UDAei_YLWM/sendMessage',
