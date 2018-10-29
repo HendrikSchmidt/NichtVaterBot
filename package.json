@@ -17,6 +17,7 @@
     "ejs": "^2.6.1",
     "express": "^4.16.3",
     "full-icu": "^1.2.1",
+    "greenlock-express": "^2.4.6",
     "mysql": "^2.15.0",
     "request": "^2.88.0"
   }
