@@ -7,12 +7,7 @@ const path = require('path');
 let request = require('request');
 let cheerio = require('cheerio');
 let fs = require('fs');
-let https = require('https');
-
-const options = {
-    key: fs.readFileSync('./ssl/domain-key.txt'),
-    cert: fs.readFileSync('./ssl/domain-crt.txt'),
-};
+let http = require('http');
 
 let app = express();
 app.use(bodyParser.json()); // for parsing application/json
@@ -25,7 +20,7 @@ app
     .get('/', (req, res) => res.render('index'))
     .listen(PORT);
 
-https.createServer(options, app).listen(443);
+http.createServer(app).listen(80);
 
 const weekdays = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag']
 
