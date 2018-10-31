@@ -6,7 +6,6 @@ const PORT = process.env.PORT || 3000;
 const path = require('path');
 const request = require('request');
 const cheerio = require('cheerio');
-const fs = require('fs');
 const http = require('http');
 
 const app = express();
@@ -24,13 +23,85 @@ app.use(function (req, res, next) {
 
 http.createServer(app).listen(PORT);
 
+const chatIds = { Clara: 294184696, Hendrik: 133024044};
 const weekdays = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+const answers = ['Gut! 👍', 'Supi 💪', 'Toll! 🤞', 'Weiter so! 🤟', '🤙', '👏', 'Du solltest dafür bezahlt werden ;)'];
+const replyMarkup = {
+    keyboard: [
+        ['Ja 😍'],
+        ['⏰ Erinner mich in 30 Minuten!'],
+        ['⏰ Erinner mich in einer Stunde!'],
+        ['⏰ Erinner mich in zwei Stunden!']
+    ],
+    one_time_keyboard: true,
+};
+let nextReminder;
+let pillTaken = true;
 
-new cronJob("10 05 13 * * *", function() {
+new cronJob("0 05 13 * * *", () => {
+    sendHoroscopeMessage();
+    pillTaken = false;
+    setTimeout(() => {
+        sendReminderMessage()
+            .then(response => {
+                clearInterval(nextReminder);
+                nextReminder = setInterval(sendReminderMessage, 60 * 60 * 100);
+                sendMessage(chatIds.Hendrik, 'Clara wurde erinnert.')
+                    .then(response => console.log('Message posted'))
+                    .catch(err => console.log('Error :', err));
+            })
+    }, 5000);
+}, null, true, 'Europe/Berlin');
+
+app.post('/new-message', (req, res) => {
+    const { message } = req.body;
+    console.log('Message received:' + message.text);
+
+    if (!message) res.end();
+
+    if (message.text.toLowerCase().indexOf('ping') >= 0) {
+        sendMessageAndEndRes(res, message.chat.id, 'pong ' + pillTaken);
+    }
+
+    if (message.text.toLowerCase().indexOf('ja') >= 0 && !pillTaken) {
+        const answer = answers[Math.floor(Math.random() * answers.length)];
+
+        if (message.chat.id === chatIds.Clara) {
+            pillTaken = true;
+            clearInterval(nextReminder);
+            sendMessageAndEndRes(res, message.chat.id, answer);
+        } else {
+            res.end('ok');
+        }
+    }
+
+    if (message.text.indexOf('Erinner mich') >= 0 && !pillTaken) {
+        clearInterval(nextReminder);
+        if (message.text.indexOf('30 Minuten!') >= 0) {
+            nextReminder = setInterval(sendReminderMessage, 30 * 60 * 1000);
+        } else if (message.text.indexOf('einer Stunde!') >= 0) {
+            nextReminder = setInterval(sendReminderMessage, 60 * 60 * 1000);
+        } else if (message.text.indexOf('zwei Stunden!') >= 0) {
+            nextReminder = setInterval(sendReminderMessage, 120 * 60 * 1000);
+        }
+        res.end('ok');
+    }
+
+    res.end();
+});
+
+const sendReminderMessage = () => {
+    if (pillTaken) clearInterval(nextReminder);
+    return sendMessage(chatIds.Clara, 'Hast du die 💊 genommen?', { reply_Markup: replyMarkup })
+        .then(response => console.log('Message posted'))
+        .catch(err => console.log('Error:' + err));
+};
+
+const sendHoroscopeMessage = () => {
     request({
         method: 'GET',
         url: 'https://www.astroportal.com/tageshoroskope/skorpion/1811/'
-    }, function(err, response, body) {
+    }, (err, response, body) => {
         if (err) return console.error(err);
 
         let $ = cheerio.load(body);
@@ -42,109 +113,26 @@ new cronJob("10 05 13 * * *", function() {
         const d = new Date();
         let weekday = weekdays[d.getDay()];
 
-        let text = `Es ist *${weekday}*, Zeit die Pille zu nehmen. Dein Horoskop sagt heute Folgendes:\n`;
-        for(let i = 0; i < 3; i++) {
+        let text = `Es ist *${weekday}*. Dein Horoskop sagt heute Folgendes:\n`;
+        for (let i = 0; i < 3; i++) {
             text += `\n*${titles[i]}*`;
             text += `\n${horoscopes[i]}\n`;
         }
 
-        text += '\nHast du die Pille genommen?';
-
-        sendMessage(294184696, text, { parse_mode: 'Markdown' })
-        .then(response => {
-            sendMessage(133024044, 'Clara wurde erinnert.')
-            .then(response => {
-                console.log('Message posted');
-                fs.writeFile('./pillTaken', '0', function(err) {
-                    if (err) throw err;
-                });
-            })
-            .catch(err => console.log('Error :', err));
-        })
-        .catch(err => console.log('Error :', err));
-    });
-}, null, true, 'Europe/Berlin');
-
-new cronJob("00 05 * * * *", function() {
-    fs.readFile('./pillTaken', 'utf8', function (err, data) {
-        if (err) throw err;
-        if(data === '0') {
-            sendMessage(294184696, 'Hast du die 💊 genommen?')
+        sendMessage(chatIds.Clara, text, {parse_mode: 'Markdown'})
             .then(response => console.log('Message posted'))
-            .catch(err => console.log('Error :', err));
-        }
+            .catch(err => console.log('Error:' + err));
     });
-}, null, true, 'Europe/Berlin');
-
-app.post('/new-message', function(req, res) {
-    const { message } = req.body;
-    console.log('Message received:' + message.text);
-
-    if (!message) {
-        return res.end();
-    }
-
-    if (message.text.toLowerCase().indexOf('ping') >= 0) {
-        sendMessageAndEndRes(res, message.chat.id, 'pong');
-    }
-
-    const answers = ['Gut! 👍', 'Supi 💪', 'Toll! 🤞', 'Weiter so! 🤟', '🤙', '👏'];
-    const answer = answers[Math.floor(Math.random() * answers.length)];
-
-    if (message.text.toLowerCase().indexOf('ja') >= 0) {
-        fs.readFile('./pillTaken', 'utf8', function (err, data) {
-            if (err) throw err;
-            if(data === '0') {
-                if (message.chat.id === 294184696) {
-                    fs.writeFile('./pillTaken', '1', function(err) {
-                        if (err) throw err;
-                        sendMessageAndEndRes(res, message.chat.id, answer);
-                    });
-                }
-            } else {
-                res.end('ok');
-            }
-        });
-    }
-
-    let replyMarkup = {
-        keyboard: [
-            ['Ja 😍'],
-            ['⏰ Erinner mich in 30 Minuten!'],
-            ['⏰ Erinner mich in einer Stunde!'],
-            ['⏰ Erinner mich in zwei Stunden!']
-        ],
-        one_time_keyboard: true,
-    };
-
-    if (message.text.toLowerCase().indexOf('⏰ Erinner mich in') >= 0) {
-        if (message.text.toLowerCase().indexOf('30 Minuten!') >= 0) {
-
-        }
-        if (message.text.toLowerCase().indexOf('einer Stunde!') >= 0) {
-
-        }
-        if (message.text.toLowerCase().indexOf('zwei Stunden!') >= 0) {
-
-        }
-    }
-
-    if (message.text.toLowerCase().indexOf('debug') >= 0) {
-        fs.readFile('./pillTaken', 'utf8', function (err, data) {
-            if (err) throw err;
-            sendMessageAndEndRes(res, message.chat.id, data + '\n' + answer, { reply_Markup: replyMarkup });
-        });
-    }
-});
+};
 
 const sendMessageAndEndRes = (res, chatId, text, settings = {}) => {
     sendMessage(chatId, text, settings)
-    .then(response => {
-        console.log('Message posted');
-        res.end('ok');
-    }).catch(err => {
-        console.log('Error:' + err);
-        res.end('Error:' + err);
+        .then(response => {
+            console.log('Message posted');
+            res.end('ok');
+        }).catch(err => {
+            console.log('Error:' + err);
+            res.end('Error:' + err);
     });
 };
 
@@ -159,4 +147,4 @@ const sendMessage = (chatId, text, settings = {}) => {
     )
 };
 
-sendMessage(133024044, 'Runs.');
+sendMessage(chatIds.Hendrik, 'Runs.');
