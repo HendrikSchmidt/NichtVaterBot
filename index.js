@@ -10,10 +10,8 @@ const fs = require('fs');
 const http = require('http');
 
 const app = express();
-app.use(bodyParser.json()); // for parsing application/json
-// app.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
-
 app
+    .use(bodyParser.json())
     .set('views', path.join(__dirname, 'views'))
     .set('view engine', 'ejs')
     .get('/', (req, res) => res.render('index'));
@@ -25,14 +23,6 @@ app.use(function (req, res, next) {
 });
 
 http.createServer(app).listen(PORT);
-
-axios.post(
-    'https://api.telegram.org/bot612610633:AAFVU-joVBwknVNMlxoflcCl_UDAei_YLWM/sendMessage',
-    {
-        chat_id: 133024044,
-        text: 'Runs.'
-    }
-);
 
 const weekdays = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
 
@@ -60,21 +50,10 @@ new cronJob("10 05 13 * * *", function() {
 
         text += '\nHast du die Pille genommen?';
 
-        axios.post(
-            'https://api.telegram.org/bot612610633:AAFVU-joVBwknVNMlxoflcCl_UDAei_YLWM/sendMessage',
-            {
-                chat_id: 294184696,
-                text: text,
-                parse_mode: 'Markdown'
-            }
-        ).then(response => {
-            axios.post(
-                'https://api.telegram.org/bot612610633:AAFVU-joVBwknVNMlxoflcCl_UDAei_YLWM/sendMessage',
-                {
-                    chat_id: 133024044,
-                    text: 'Clara wurde erinnert.'
-                }
-            ).then(response => {
+        sendMessage(294184696, text, { parse_mode: 'Markdown' })
+        .then(response => {
+            sendMessage(133024044, 'Clara wurde erinnert.')
+            .then(response => {
                 console.log('Message posted');
                 fs.writeFile('./pillTaken', '0', function(err) {
                     if (err) throw err;
@@ -90,41 +69,23 @@ new cronJob("00 05 * * * *", function() {
     fs.readFile('./pillTaken', 'utf8', function (err, data) {
         if (err) throw err;
         if(data === '0') {
-            axios.post(
-                'https://api.telegram.org/bot612610633:AAFVU-joVBwknVNMlxoflcCl_UDAei_YLWM/sendMessage',
-                {
-                    chat_id: 294184696,
-                    text: 'Hast du die 💊 genommen?'
-                }
-            ).then(response => console.log('Message posted'))
+            sendMessage(294184696, 'Hast du die 💊 genommen?')
+            .then(response => console.log('Message posted'))
             .catch(err => console.log('Error :', err));
         }
     });
 }, null, true, 'Europe/Berlin');
 
 app.post('/new-message', function(req, res) {
-    console.log(req.body);
     const { message } = req.body;
-    console.log('Message received:' + message);
+    console.log('Message received:' + message.text);
 
     if (!message) {
         return res.end();
     }
 
     if (message.text.toLowerCase().indexOf('ping') >= 0) {
-        axios.post(
-            'https://api.telegram.org/bot612610633:AAFVU-joVBwknVNMlxoflcCl_UDAei_YLWM/sendMessage',
-            {
-                chat_id: message.chat.id,
-                text: 'pong'
-            }
-        ).then(response => {
-            console.log('Message posted');
-            res.end('ok');
-        }).catch(err => {
-            console.log('Error :', err);
-            res.end('Error :' + err);
-        });
+        sendMessageAndEndRes(res, message.chat.id, 'pong');
     }
 
     const answers = ['Gut! 👍', 'Supi 💪', 'Toll! 🤞', 'Weiter so! 🤟', '🤙', '👏'];
@@ -137,19 +98,7 @@ app.post('/new-message', function(req, res) {
                 if (message.chat.id === 294184696) {
                     fs.writeFile('./pillTaken', '1', function(err) {
                         if (err) throw err;
-                        axios.post(
-                            'https://api.telegram.org/bot612610633:AAFVU-joVBwknVNMlxoflcCl_UDAei_YLWM/sendMessage',
-                            {
-                                chat_id: message.chat.id,
-                                text: answer
-                            }
-                        ).then(response => {
-                            console.log('Message posted');
-                            res.end('ok');
-                        }).catch(err => {
-                            console.log('Error :', err);
-                            res.end('Error :' + err);
-                        });
+                        sendMessageAndEndRes(res, message.chat.id, answer);
                     });
                 }
             } else {
@@ -166,25 +115,48 @@ app.post('/new-message', function(req, res) {
             ['⏰ Erinner mich in zwei Stunden!']
         ],
         one_time_keyboard: true,
+    };
+
+    if (message.text.toLowerCase().indexOf('⏰ Erinner mich in') >= 0) {
+        if (message.text.toLowerCase().indexOf('30 Minuten!') >= 0) {
+
+        }
+        if (message.text.toLowerCase().indexOf('einer Stunde!') >= 0) {
+
+        }
+        if (message.text.toLowerCase().indexOf('zwei Stunden!') >= 0) {
+
+        }
     }
 
     if (message.text.toLowerCase().indexOf('debug') >= 0) {
         fs.readFile('./pillTaken', 'utf8', function (err, data) {
             if (err) throw err;
-            axios.post(
-                'https://api.telegram.org/bot612610633:AAFVU-joVBwknVNMlxoflcCl_UDAei_YLWM/sendMessage',
-                {
-                    chat_id: message.chat.id,
-                    text: data + '\n' + answer,
-                    reply_markup: replyMarkup
-                }
-            ).then(response => {
-                console.log('Message posted');
-                res.end('ok');
-            }).catch(err => {
-                console.log('Error :', err);
-                res.end('Error :' + err);
-            });
+            sendMessageAndEndRes(res, message.chat.id, data + '\n' + answer, { reply_Markup: replyMarkup });
         });
     }
 });
+
+const sendMessageAndEndRes = (res, chatId, text, settings = {}) => {
+    sendMessage(chatId, text, settings)
+    .then(response => {
+        console.log('Message posted');
+        res.end('ok');
+    }).catch(err => {
+        console.log('Error:' + err);
+        res.end('Error:' + err);
+    });
+};
+
+const sendMessage = (chatId, text, settings = {}) => {
+    return axios.post(
+        'https://api.telegram.org/bot612610633:AAFVU-joVBwknVNMlxoflcCl_UDAei_YLWM/sendMessage',
+        {
+            chat_id: chatId,
+            text: text,
+            ...settings
+        }
+    )
+};
+
+sendMessage(133024044, 'Runs.');
