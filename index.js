@@ -11,8 +11,7 @@ const http = require('http');
 
 const app = express();
 app.use(bodyParser.json()); // for parsing application/json
-app.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
-// app.use(express.static('static'));
+// app.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
 
 app
     .set('views', path.join(__dirname, 'views'))
@@ -34,9 +33,8 @@ axios.post(
         text: 'Runs.'
     }
 );
-console.log('Runs.');
 
-const weekdays = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag']
+const weekdays = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
 
 new cronJob("10 05 13 * * *", function() {
     request({
@@ -96,7 +94,7 @@ new cronJob("00 05 * * * *", function() {
                 'https://api.telegram.org/bot612610633:AAFVU-joVBwknVNMlxoflcCl_UDAei_YLWM/sendMessage',
                 {
                     chat_id: 294184696,
-                    text: 'Hast du die Pille genommen?'
+                    text: 'Hast du die 💊 genommen?'
                 }
             ).then(response => console.log('Message posted'))
             .catch(err => console.log('Error :', err));
@@ -160,6 +158,16 @@ app.post('/new-message', function(req, res) {
         });
     }
 
+    let replyMarkup = {
+        keyboard: [
+            ['Ja 😍'],
+            ['⏰ Erinner mich in 30 Minuten!'],
+            ['⏰ Erinner mich in einer Stunde!'],
+            ['⏰ Erinner mich in zwei Stunden!']
+        ],
+        one_time_keyboard: true,
+    }
+
     if (message.text.toLowerCase().indexOf('debug') >= 0) {
         fs.readFile('./pillTaken', 'utf8', function (err, data) {
             if (err) throw err;
@@ -167,7 +175,8 @@ app.post('/new-message', function(req, res) {
                 'https://api.telegram.org/bot612610633:AAFVU-joVBwknVNMlxoflcCl_UDAei_YLWM/sendMessage',
                 {
                     chat_id: message.chat.id,
-                    text: data + '\n' + answer
+                    text: data + '\n' + answer,
+                    reply_markup: replyMarkup
                 }
             ).then(response => {
                 console.log('Message posted');
@@ -178,16 +187,4 @@ app.post('/new-message', function(req, res) {
             });
         });
     }
-});
-
-app.get('/telegram', function(req, res) {
-    axios.post(
-        'https://api.telegram.org/bot612610633:AAFVU-joVBwknVNMlxoflcCl_UDAei_YLWM/sendMessage',
-        {
-            chat_id: 133024044,
-            text: 'Message'
-        }
-    );
-    res.send('Telegram');
-    res.end('ok');
 });
