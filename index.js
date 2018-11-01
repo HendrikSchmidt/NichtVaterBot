@@ -3,25 +3,19 @@ const bodyParser = require('body-parser');
 const cronJob = require('cron').CronJob;
 const axios = require('axios');
 const PORT = process.env.PORT || 3000;
-const path = require('path');
 const request = require('request');
 const cheerio = require('cheerio');
-const http = require('http');
 
 const app = express();
 app
     .use(bodyParser.json())
-    .set('views', path.join(__dirname, 'views'))
-    .set('view engine', 'ejs')
-    .get('/', (req, res) => res.render('index'));
-
-app.use(function (req, res, next) {
-    console.log('Time:', Date.now());
-    console.log(req.body);
-    next();
-});
-
-http.createServer(app).listen(PORT);
+    .get('/', (req, res) => res.send('This Telegram bot reminds you to take the 💊.'))
+    .use((req, res, next) => {
+        console.log('Time:', Date.now());
+        console.log(req.body);
+        next();
+    })
+    .listen(PORT);
 
 const chatIds = { Clara: 294184696, Hendrik: 133024044};
 const weekdays = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
