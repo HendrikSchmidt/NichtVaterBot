@@ -85,7 +85,7 @@ app.post('/new-message', (req, res) => {
         response = `Ich erinnere dich nächsten *${weekday}* wieder.`;
     } else if (message.text.toLowerCase().indexOf('💊') >= 0) {
         pauseDays = 0;
-        response = `Ich erinnere dich beim nächsten mal wieder.`;
+        response = `Ich erinnere dich beim nächsten Mal wieder.`;
     }
     else response = 'Ich habe die Nachricht leider nicht verstanden 😔';
 
